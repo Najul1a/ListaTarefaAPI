@@ -25,7 +25,13 @@ namespace ListaTarefaAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tarefa>>> GetTarefas()
         {
-            return await _context.Tarefas.ToListAsync();
+            return await _context.Tarefas.Where(t => t.Concluida == true).ToListAsync();
+        }
+
+        [HttpGet("Concluidas")]
+        public async Task<ActionResult<IEnumerable<Tarefa>>> GetTarefasConcluidas()
+        {
+            return await _context.Tarefas.Where(t => t.Concluida).ToListAsync();
         }
 
         // GET: api/Tarefas/5
@@ -96,6 +102,38 @@ namespace ListaTarefaAPI.Controllers
 
             _context.Tarefas.Remove(tarefa);
             await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // Novo endpoint para marcar uma tarefa como concluída
+        [HttpPut("Concluir/{id}")]
+        public async Task<IActionResult> ConcluirTarefa(int id)
+        {
+            var tarefa = await _context.Tarefas.FindAsync(id);
+            if (tarefa == null)
+            {
+                return NotFound();
+            }
+
+            tarefa.Concluida = true;
+            _context.Entry(tarefa).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TarefaExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
